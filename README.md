@@ -4,6 +4,11 @@
 
 ## 使用
 
+安装
+```shell
+$ go get github.com/ZengDaWei/go-ethereum
+```
+
 案例：
 
 ```go
