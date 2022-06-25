@@ -3,18 +3,17 @@ package contract
 import (
 	"context"
 	"github.com/labstack/gommon/color"
-	"log"
 	"math/big"
 	"sort"
-	"strconv"
 	"time"
 )
 
 type (
 	SuccessCallBack func(*big.Int)
+	ErrorCallBack   func(error)
 )
 
-func LoopListenerEvent(syncInterval uint, reqBlockLimit uint, fromBlockNumber *uint, rpcEndpoint string, cb SuccessCallBack) {
+func Run(syncInterval uint, reqBlockLimit uint, fromBlockNumber *uint, rpcEndpoint string, cb SuccessCallBack, erCb ErrorCallBack) {
 
 	//时间间隔（秒为单位）
 	duration := time.Second * time.Duration(syncInterval)
@@ -32,7 +31,7 @@ loop:
 		case <-ticker.C:
 			currentBlockNumber, err := client.BlockNumber(ctx)
 			if err != nil {
-				color.Yellow("连接断开,正在自动重试...")
+				color.Yellow("Disconnected, retrying automatically...")
 				goto loop
 			}
 
@@ -51,12 +50,10 @@ loop:
 				goto loop
 			}
 
-			log.Println("current: " + strconv.FormatUint(currentBlockNumber, 10) + ", from: " + from.Text(10) + ", to : " + to.Text(10))
-
 			//获取事件
 			eventLogs, err := GetEventLogs(&from, &to)
 			if err != nil {
-				HandleError(err)
+				erCb(err)
 				goto loop
 			} else {
 				//事件排序
@@ -66,7 +63,7 @@ loop:
 				for _, eventLog := range sortedLogs.logs {
 					err := HandleEvent(eventLog)
 					if err != nil {
-						HandleError(err)
+						erCb(err)
 						goto loop
 					}
 				}
@@ -84,9 +81,4 @@ loop:
 		}
 	}
 
-}
-
-func HandleError(err error) {
-	color.Red("出现异常")
-	panic(err)
 }
