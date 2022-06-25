@@ -1,7 +1,7 @@
 package route
 
 import (
-	"github.com/ZengDaWei/go-ethereum/contract"
+	"github.com/ZengDaWei/go-ethereum/address"
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
@@ -23,13 +23,13 @@ func Add(contractAddress string, eventSig string, handleFunction func(log types.
 
 	exists := false
 
-	for _, ars := range contract.ContractAddresses {
+	for _, ars := range address.ContractAddresses {
 		if ars == contractAddress {
 			exists = true
 		}
 	}
 
 	if exists == false {
-		contract.ContractAddresses = append(contract.ContractAddresses, contractAddress)
+		address.ContractAddresses = append(address.ContractAddresses, contractAddress)
 	}
 }

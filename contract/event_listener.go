@@ -14,7 +14,7 @@ type (
 	SuccessCallBack func(*big.Int)
 )
 
-func LoopListenerEvent(syncInterval uint, reqBlockLimit uint, fromBlockNumber uint, cb SuccessCallBack) {
+func LoopListenerEvent(syncInterval uint, reqBlockLimit uint, fromBlockNumber uint, rpcEndpoint string, cb SuccessCallBack) {
 
 	//时间间隔（秒为单位）
 	duration := time.Second * time.Duration(syncInterval)
@@ -22,7 +22,7 @@ func LoopListenerEvent(syncInterval uint, reqBlockLimit uint, fromBlockNumber ui
 	ticker := time.NewTicker(duration)
 	ctx := context.Background()
 
-	client, err := GetClient()
+	client, err := GetClient(rpcEndpoint)
 	if err != nil {
 		panic(err)
 	}

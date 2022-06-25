@@ -1,9 +1,9 @@
 package contract
 
 import (
-	"antmons/config"
-	"antmons/route"
 	"context"
+	"github.com/ZengDaWei/go-ethereum/address"
+	"github.com/ZengDaWei/go-ethereum/route"
 	"math/big"
 	"sync"
 
@@ -19,10 +19,10 @@ var (
 	onceClient sync.Once
 )
 
-func GetClient() (*ethclient.Client, error) {
+func GetClient(rpcEndpoint string) (*ethclient.Client, error) {
 	var err error
 	onceClient.Do(func() {
-		client, err = ethclient.Dial(config.EndPoint)
+		client, err = ethclient.Dial(rpcEndpoint)
 	})
 	if err != nil {
 		return nil, err
@@ -33,7 +33,7 @@ func GetClient() (*ethclient.Client, error) {
 func GetEventLogs(from *big.Int, to *big.Int) ([]types.Log, error) {
 	var logResult []types.Log
 
-	for _, contractAddress := range config.ContractAddresses {
+	for _, contractAddress := range address.ContractAddresses {
 		var topics []common.Hash
 		for _, event := range route.ContractEventMap[contractAddress] {
 			topics = append(topics, crypto.Keccak256Hash([]byte(event)))

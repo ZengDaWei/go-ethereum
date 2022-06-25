@@ -1,4 +1,4 @@
-package contract
+package address
 
 var (
 	ContractAddresses []string

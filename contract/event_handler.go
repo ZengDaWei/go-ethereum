@@ -1,13 +1,14 @@
 package contract
 
 import (
+	"github.com/ZengDaWei/go-ethereum/address"
 	"github.com/ZengDaWei/go-ethereum/route"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 )
 
 func HandleEvent(log types.Log) error {
-	for _, contractAddress := range ContractAddresses {
+	for _, contractAddress := range address.ContractAddresses {
 		if log.Address.String() != contractAddress {
 			continue
 		}
