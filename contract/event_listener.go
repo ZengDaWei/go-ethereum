@@ -14,7 +14,7 @@ type (
 	SuccessCallBack func(*big.Int)
 )
 
-func LoopListenerEvent(syncInterval uint, reqBlockLimit uint, fromBlockNumber uint, rpcEndpoint string, cb SuccessCallBack) {
+func LoopListenerEvent(syncInterval uint, reqBlockLimit uint, fromBlockNumber *uint, rpcEndpoint string, cb SuccessCallBack) {
 
 	//时间间隔（秒为单位）
 	duration := time.Second * time.Duration(syncInterval)
@@ -37,15 +37,15 @@ loop:
 			}
 
 		handle:
-			value := uint(currentBlockNumber) - fromBlockNumber
+			value := uint(currentBlockNumber) - *fromBlockNumber
 
 			//有新区块未读，并达到了读取标准（即未读区块 > 数据库中设置的limit）
 			if value >= reqBlockLimit {
 				value = reqBlockLimit
 			}
 
-			from := *big.NewInt(int64(fromBlockNumber) + 1)
-			to := *big.NewInt(int64(fromBlockNumber + value))
+			from := *big.NewInt(int64(*fromBlockNumber) + 1)
+			to := *big.NewInt(int64(*fromBlockNumber + value))
 
 			if from.Int64() > int64(currentBlockNumber) {
 				goto loop
@@ -77,7 +77,7 @@ loop:
 				有新区块未读，并达到了读取标准（即未读区块 > 数据库中设置的limit）
 				这里再次这样判断的原因是：如果未处理的区块过多，可以分批一次性处理完，不用每次处理之后都要再等待
 				*/
-				if (uint(currentBlockNumber) - reqBlockLimit) >= fromBlockNumber {
+				if (uint(currentBlockNumber) - reqBlockLimit) >= *fromBlockNumber {
 					goto handle
 				}
 			}
