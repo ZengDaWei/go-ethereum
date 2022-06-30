@@ -9,11 +9,12 @@ import (
 )
 
 type (
-	SuccessCallBack func(*big.Int)
-	ErrorCallBack   func(error)
+	BeginCallBack   func(ctx context.Context)
+	SuccessCallBack func(ctx context.Context, value *big.Int)
+	ErrorCallBack   func(ctx context.Context, err error)
 )
 
-func Run(syncInterval uint, reqBlockLimit uint, fromBlockNumber *uint, rpcEndpoint string, cb SuccessCallBack, erCb ErrorCallBack) {
+func Run(syncInterval uint, reqBlockLimit uint, fromBlockNumber *uint, rpcEndpoint string, beginCb BeginCallBack, cb SuccessCallBack, erCb ErrorCallBack) {
 
 	//时间间隔（秒为单位）
 	duration := time.Second * time.Duration(syncInterval)
@@ -53,22 +54,25 @@ loop:
 			//获取事件
 			eventLogs, err := GetEventLogs(&from, &to)
 			if err != nil {
-				erCb(err)
+				erCb(context.Background(), err)
 				goto loop
 			} else {
 				//事件排序
 				sortedLogs := logsSupportSort{logs: eventLogs}
 				sort.Sort(&sortedLogs)
 				//处理事件
-				for _, eventLog := range sortedLogs.logs {
-					err := HandleEvent(eventLog)
-					if err != nil {
-						erCb(err)
-						goto loop
+				if sortedLogs.Len() > 0 {
+					beginCb(context.Background())
+					for _, eventLog := range sortedLogs.logs {
+						err := HandleEvent(eventLog)
+						if err != nil {
+							erCb(context.Background(), err)
+							goto loop
+						}
 					}
 				}
 
-				cb(&to)
+				cb(context.Background(), &to)
 
 				/**
 				有新区块未读，并达到了读取标准（即未读区块 > 数据库中设置的limit）
