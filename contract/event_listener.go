@@ -72,7 +72,8 @@ loop:
 				}
 
 				ctx = cb(ctx, &to)
-				*fromBlockNumber += syncInterval
+				*fromBlockNumber += uint(to.Int64())
+
 				/**
 				有新区块未读，并达到了读取标准（即未读区块 > 数据库中设置的limit）
 				这里再次这样判断的原因是：如果未处理的区块过多，可以分批一次性处理完，不用每次处理之后都要再等待
