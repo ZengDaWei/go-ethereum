@@ -14,13 +14,12 @@ type (
 	ErrorCallBack   func(ctx context.Context, err error)
 )
 
-func Run(syncInterval uint, reqBlockLimit uint, fromBlockNumber *uint, rpcEndpoint string, beginCb BeginCallBack, cb SuccessCallBack, erCb ErrorCallBack) {
+func Run(ctx context.Context, syncInterval uint, reqBlockLimit uint, fromBlockNumber *uint, rpcEndpoint string, beginCb BeginCallBack, cb SuccessCallBack, erCb ErrorCallBack) {
 
 	//时间间隔（秒为单位）
 	duration := time.Second * time.Duration(syncInterval)
 
 	ticker := time.NewTicker(duration)
-	ctx := context.Background()
 
 	client, err := GetClient(rpcEndpoint)
 	if err != nil {
@@ -54,7 +53,7 @@ loop:
 			//获取事件
 			eventLogs, err := GetEventLogs(&from, &to)
 			if err != nil {
-				erCb(context.Background(), err)
+				erCb(ctx, err)
 				goto loop
 			} else {
 				//事件排序
@@ -62,17 +61,17 @@ loop:
 				sort.Sort(&sortedLogs)
 				//处理事件
 				if sortedLogs.Len() > 0 {
-					beginCb(context.Background())
+					beginCb(ctx)
 					for _, eventLog := range sortedLogs.logs {
 						err := HandleEvent(eventLog)
 						if err != nil {
-							erCb(context.Background(), err)
+							erCb(ctx, err)
 							goto loop
 						}
 					}
 				}
 
-				cb(context.Background(), &to)
+				cb(ctx, &to)
 
 				/**
 				有新区块未读，并达到了读取标准（即未读区块 > 数据库中设置的limit）
