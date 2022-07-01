@@ -9,9 +9,9 @@ import (
 )
 
 type (
-	BeginCallBack   func(ctx context.Context)
-	SuccessCallBack func(ctx context.Context, value *big.Int)
-	ErrorCallBack   func(ctx context.Context, err error)
+	BeginCallBack   func(ctx context.Context) context.Context
+	SuccessCallBack func(ctx context.Context, value *big.Int) context.Context
+	ErrorCallBack   func(ctx context.Context, err error) context.Context
 )
 
 func Run(ctx context.Context, syncInterval uint, reqBlockLimit uint, fromBlockNumber *uint, rpcEndpoint string, beginCb BeginCallBack, cb SuccessCallBack, erCb ErrorCallBack) {
@@ -53,7 +53,7 @@ loop:
 			//获取事件
 			eventLogs, err := GetEventLogs(&from, &to)
 			if err != nil {
-				erCb(ctx, err)
+				ctx = erCb(ctx, err)
 				goto loop
 			} else {
 				//事件排序
@@ -61,17 +61,17 @@ loop:
 				sort.Sort(&sortedLogs)
 				//处理事件
 				if sortedLogs.Len() > 0 {
-					beginCb(ctx)
+					ctx = beginCb(ctx)
 					for _, eventLog := range sortedLogs.logs {
 						err := HandleEvent(eventLog)
 						if err != nil {
-							erCb(ctx, err)
+							ctx = erCb(ctx, err)
 							goto loop
 						}
 					}
 				}
 
-				cb(ctx, &to)
+				ctx = cb(ctx, &to)
 
 				/**
 				有新区块未读，并达到了读取标准（即未读区块 > 数据库中设置的limit）
