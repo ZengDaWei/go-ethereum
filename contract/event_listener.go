@@ -63,7 +63,7 @@ loop:
 				if sortedLogs.Len() > 0 {
 					ctx = beginCb(ctx)
 					for _, eventLog := range sortedLogs.logs {
-						err := HandleEvent(eventLog)
+						err := HandleEvent(ctx, eventLog)
 						if err != nil {
 							ctx = erCb(ctx, err)
 							goto loop
