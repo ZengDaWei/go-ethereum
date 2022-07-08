@@ -3,6 +3,7 @@ package contract
 import (
 	"context"
 	"github.com/labstack/gommon/color"
+	"log"
 	"math/big"
 	"sort"
 	"time"
@@ -14,7 +15,7 @@ type (
 	ErrorCallBack   func(ctx context.Context, err error) context.Context
 )
 
-func Run(ctx context.Context, syncInterval uint, reqBlockLimit uint, fromBlockNumber *uint, rpcEndpoint string, beginCb BeginCallBack, cb SuccessCallBack, erCb ErrorCallBack) {
+func Run(ctx context.Context, syncInterval uint, reqBlockLimit uint, fromBlockNumber uint, rpcEndpoint string, beginCb BeginCallBack, cb SuccessCallBack, erCb ErrorCallBack) {
 
 	//时间间隔（秒为单位）
 	duration := time.Second * time.Duration(syncInterval)
@@ -36,15 +37,17 @@ loop:
 			}
 
 		handle:
-			value := uint(currentBlockNumber) - *fromBlockNumber
+			value := uint(currentBlockNumber) - fromBlockNumber
 
 			//有新区块未读，并达到了读取标准（即未读区块 > 数据库中设置的limit）
 			if value >= reqBlockLimit {
 				value = reqBlockLimit
 			}
 
-			from := *big.NewInt(int64(*fromBlockNumber) + 1)
-			to := *big.NewInt(int64(*fromBlockNumber + value))
+			from := *big.NewInt(int64(fromBlockNumber) + 1)
+			to := *big.NewInt(int64(fromBlockNumber + value))
+
+			log.Printf("「contract listening ...」 from: %d, to: %d, current: %d\n", from.Int64(), to.Int64(), currentBlockNumber)
 
 			if from.Int64() > int64(currentBlockNumber) {
 				goto loop
@@ -59,9 +62,9 @@ loop:
 				//事件排序
 				sortedLogs := logsSupportSort{logs: eventLogs}
 				sort.Sort(&sortedLogs)
+				ctx = beginCb(ctx)
 				//处理事件
 				if sortedLogs.Len() > 0 {
-					ctx = beginCb(ctx)
 					for _, eventLog := range sortedLogs.logs {
 						err := HandleEvent(ctx, eventLog)
 						if err != nil {
@@ -70,15 +73,14 @@ loop:
 						}
 					}
 				}
-
 				ctx = cb(ctx, &to)
-				*fromBlockNumber += uint(to.Int64())
+				fromBlockNumber += uint(to.Int64())
 
 				/**
 				有新区块未读，并达到了读取标准（即未读区块 > 数据库中设置的limit）
 				这里再次这样判断的原因是：如果未处理的区块过多，可以分批一次性处理完，不用每次处理之后都要再等待
 				*/
-				if (uint(currentBlockNumber) - reqBlockLimit) >= *fromBlockNumber {
+				if (uint(currentBlockNumber) - reqBlockLimit) >= fromBlockNumber {
 					goto handle
 				}
 			}
