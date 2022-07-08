@@ -74,7 +74,7 @@ loop:
 					}
 				}
 				ctx = cb(ctx, &to)
-				fromBlockNumber += value
+				fromBlockNumber = uint(to.Int64())
 
 				/**
 				有新区块未读，并达到了读取标准（即未读区块 > 数据库中设置的limit）
