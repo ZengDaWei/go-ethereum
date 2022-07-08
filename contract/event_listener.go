@@ -66,7 +66,7 @@ loop:
 						err := HandleEvent(ctx, eventLog)
 						if err != nil {
 							ctx = erCb(ctx, err)
-							goto loop
+							continue
 						}
 					}
 				}
